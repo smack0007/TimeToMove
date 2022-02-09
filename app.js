@@ -1,4 +1,4 @@
-const timerDuration = 60 * 30 * 1000;
+const timerDuration = 30 * 60 * 1000;
 
 const timerElement = document.querySelector("#timer");
 const restartButton = document.querySelector("#restart");
@@ -18,20 +18,20 @@ Notification.requestPermission().then(permission => {
     canShowNotification = permission == "granted";
 });
 
-document.visibilitychange = () => {
-    if (document.visibilityState != "visible") {
-        return;
-    }
-
-    if (!timerRunning) {
-        updateTimer(timerLastUpdate);
+function onVisibilityChange() {
+    // If the tab was in the background and the timer stopped
+    // in the meantime update the display.
+    if (document.visibilityState == "visible" && !timerRunning) {
+        updateTimer(Date.now());
     }
 };
+
+document.addEventListener("visibilitychange", onVisibilityChange, false);
 
 function restartTimer() {
     clearTimer();
 
-    timerStart = performance.now();
+    timerStart = Date.now();
     timerEnd = timerStart + timerDuration;
     timerLastUpdate = timerStart;
     timerRunning = true;
@@ -39,7 +39,7 @@ function restartTimer() {
     updateTimer(timerStart, true);
 }
 
-function updateTimer(now, forceUpdate) {
+function updateTimer(now, forceUpdate) {    
     if ((document.visibilityState == "visible" && now - timerLastUpdate >= 500) || forceUpdate) {
         const delta = now - timerStart;
         let totalRemainingSeconds = Math.floor((timerDuration - delta) / 1000);
@@ -63,13 +63,13 @@ function updateTimer(now, forceUpdate) {
         lastUpdate = now;
     }
 
-    if (now >= timerEnd) {
-        clearTimer();
-        showNotification();
-    }
-
     if (timerRunning) {
-        requestAnimationFrame(updateTimer);
+        if (now >= timerEnd) {
+            clearTimer();
+            showNotification();
+        } else {
+            setTimeout(() => { updateTimer(Date.now()) }, 500);
+        }
     }
 }
 
