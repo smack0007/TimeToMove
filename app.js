@@ -24,7 +24,7 @@ document.visibilitychange = () => {
     }
 
     if (!timerRunning) {
-        updateTimer(performance.now());
+        updateTimer(timerLastUpdate);
     }
 };
 
@@ -40,7 +40,7 @@ function restartTimer() {
 }
 
 function updateTimer(now, forceUpdate) {
-    if (now - timerLastUpdate >= 500 || forceUpdate) {
+    if ((document.visibilityState == "visible" && now - timerLastUpdate >= 500) || forceUpdate) {
         const delta = now - timerStart;
         let totalRemainingSeconds = Math.floor((timerDuration - delta) / 1000);
         
@@ -58,11 +58,7 @@ function updateTimer(now, forceUpdate) {
             seconds = `0${seconds}`;
         }
 
-        const timer = `${minutes}:${seconds}`;
-        if (document.visibilityState == "visible") {
-            timerElement.innerHTML = timer;
-        }
-        document.title = `(${timer}) Time to Move`;
+        timerElement.innerHTML = `${minutes}:${seconds}`;
 
         lastUpdate = now;
     }
