@@ -8,6 +8,9 @@ stopButton.onclick = clearTimer;
 
 let canShowNotification = false;
 let timerRunning = false;
+let timerStart = 0;
+let timerEnd = 0;
+let timerLastUpdate = 0;
 let notification = null;
 
 Notification.requestPermission().then(permission => {
@@ -15,50 +18,63 @@ Notification.requestPermission().then(permission => {
     canShowNotification = permission == "granted";
 });
 
+document.visibilitychange = () => {
+    if (document.visibilityState != "visible") {
+        return;
+    }
+
+    if (!timerRunning) {
+        updateTimer(performance.now());
+    }
+};
+
 function restartTimer() {
     clearTimer();
 
-    let start = performance.now();
-    let end = start + timerDuration;
-    let lastUpdate = 0;
-    const updateTimer = (now, forceUpdate) => {
-        if (now - lastUpdate >= 500 || forceUpdate) {
-            const delta = now - start;
-            let totalRemainingSeconds = Math.floor((timerDuration - delta) / 1000);
-            
-            if (totalRemainingSeconds < 0) {
-                totalRemainingSeconds = 0;
-            }
-
-            let minutes = (Math.floor(totalRemainingSeconds / 60)).toString();
-            if (minutes.length == 1) {
-                minutes = `0${minutes}`;
-            }
-            
-            let seconds = (totalRemainingSeconds % 60).toString();
-            if (seconds.length == 1) {
-                seconds = `0${seconds}`;
-            }
-
-            const timer = `${minutes}:${seconds}`;
-            timerElement.innerHTML = timer;
-            document.title = `(${timer}) Time to Move`;
-
-            lastUpdate = now;
-        }
-
-        if (now >= end) {
-            clearTimer();
-            showNotification();
-        }
-
-        if (timerRunning) {
-            requestAnimationFrame(updateTimer);
-        }
-    };
-
+    timerStart = performance.now();
+    timerEnd = timerStart + timerDuration;
+    timerLastUpdate = timerStart;
     timerRunning = true;
-    updateTimer(start, true);
+
+    updateTimer(timerStart, true);
+}
+
+function updateTimer(now, forceUpdate) {
+    if (now - timerLastUpdate >= 500 || forceUpdate) {
+        const delta = now - timerStart;
+        let totalRemainingSeconds = Math.floor((timerDuration - delta) / 1000);
+        
+        if (totalRemainingSeconds < 0) {
+            totalRemainingSeconds = 0;
+        }
+
+        let minutes = (Math.floor(totalRemainingSeconds / 60)).toString();
+        if (minutes.length == 1) {
+            minutes = `0${minutes}`;
+        }
+        
+        let seconds = (totalRemainingSeconds % 60).toString();
+        if (seconds.length == 1) {
+            seconds = `0${seconds}`;
+        }
+
+        const timer = `${minutes}:${seconds}`;
+        if (document.visibilityState == "visible") {
+            timerElement.innerHTML = timer;
+        }
+        document.title = `(${timer}) Time to Move`;
+
+        lastUpdate = now;
+    }
+
+    if (now >= timerEnd) {
+        clearTimer();
+        showNotification();
+    }
+
+    if (timerRunning) {
+        requestAnimationFrame(updateTimer);
+    }
 }
 
 function clearTimer() {
