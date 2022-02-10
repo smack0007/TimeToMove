@@ -1,4 +1,4 @@
-# Time to Move
+# [Time to Move](https://smack0007.github.io/TimeToMove/)
 
 A simple app that counts down and tells you to move.
 
